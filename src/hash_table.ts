@@ -3,12 +3,14 @@ import { NodeInterface, PeerInterface } from './protocol';
 export class HashTable {
   logger: Console;
   capacity: number;
+  selfId: string;
   nodes: NodeInterface[] = [];
   peers: PeerInterface[] = [];
 
-  constructor(logger: Console = console, capacity: number = 65535) {
+  constructor(selfId: string, logger: Console = console, capacity: number = 65535) {
     this.logger = logger;
     this.capacity = capacity;
+    this.selfId = selfId;
   }
 
   getStats() {
@@ -29,7 +31,7 @@ export class HashTable {
 
   addNodes(nodes: NodeInterface[]) {
     for (const node of nodes) {
-      if (this.nodes.length < this.capacity) {
+      if (node.id !== this.selfId && this.nodes.length < this.capacity) {
         this.nodes.push(node);
       }
     }

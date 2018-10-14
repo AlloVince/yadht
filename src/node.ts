@@ -173,7 +173,8 @@ export default class Node {
   findNode(targetNodeId: string, askNode: NodeInterface): FindNodeQuery {
     const query = new FindNodeQuery({
       queryArguments: {
-        id: this.id,
+        // id: this.id,
+        id: Node.generateId().toString('hex'),
         target: targetNodeId,
       },
       fromIp: this.ip,

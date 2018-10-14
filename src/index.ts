@@ -58,7 +58,7 @@ export default class DHTNode {
       this.server,
     );
 
-    this.hashTable = new HashTable(this.logger);
+    this.hashTable = new HashTable(this.node.id, this.logger);
   }
 
   setBootstrapNodes(nodes: Node[]) {
@@ -97,7 +97,9 @@ export default class DHTNode {
   walk() {
     const askNode = this.hashTable.shiftNode();
     if (askNode) {
+      // console.log(this.node.id, this.node.getRelayNodeId(askNode.id))
       this.node.findNode(this.node.getRelayNodeId(askNode.id), askNode);
+      // this.node.findNode(Node.generateId().toString('hex'), askNode);
     }
     setTimeout(() => this.walk(), 2);
   }
@@ -130,7 +132,6 @@ export default class DHTNode {
       }]);
       this.node.replyFindNode(
         query,
-        // Not same
         this.hashTable.getNearestNodes(query.getTargetNodeId()),
       );
     });
@@ -138,10 +139,6 @@ export default class DHTNode {
     this.node.onFindNodeResponse((response: Protocol.FindNodeResponse) => {
       const nodes = response.getNodes();
       this.hashTable.addNodes(nodes);
-      // for (const foundNode of nodes) {
-      //   this.node.findNode(this.node.id, foundNode);
-      //   this.node.getPeers(infoHash, foundNode);
-      // }
     });
 
     this.node.onGetPeersQuery((query: Protocol.GetPeersQuery) => {
@@ -163,9 +160,6 @@ export default class DHTNode {
       } else {
         const nodes = response.getNodes();
         this.hashTable.addNodes(nodes);
-        // for (const foundNode of nodes) {
-        //   this.node.findNode(this.node.id, foundNode);
-        // }
       }
     });
 
@@ -185,6 +179,7 @@ export default class DHTNode {
 
     this.listen(() => {
       this.join();
+      this.walk();
     });
 
     setInterval(() => this.join(), 3000);
