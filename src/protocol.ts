@@ -387,7 +387,7 @@ export class FindNodeQuery extends QueryMessage {
     });
   }
 
-  getTargetNodeId() {
+  getTargetNodeId(): string {
     return this[KEY_ARGUMENTS].target;
   }
 

@@ -27,7 +27,7 @@ class Token {
   }
 }
 
-export default class Crawler {
+export default class DHTNode {
   ip: string;
   port: number;
   server: dgram.Socket;
@@ -73,9 +73,34 @@ export default class Crawler {
     return this.node;
   }
 
-  start(inputHash: string) {
-    const token = new Token();
+  torrentDiscovery(inputHash: string) {
     const infoHash = process.env.INFO_HASH || inputHash.toLowerCase();
+
+    this.listen(() => {
+      for (const bootNode of this.bootstrapNodes) {
+        this.node.findNode(this.node.id, bootNode);
+        // this.node.getPeers(infoHash, bootNode);
+      }
+    });
+  }
+
+  join() {
+    for (const bootNode of this.bootstrapNodes) {
+      this.node.findNode(this.node.id, bootNode);
+    }
+  }
+
+  walk() {
+    const askNode = this.hashTable.shiftNode();
+    if (askNode) {
+      this.node.findNode(this.node.getRelayNodeId(askNode.id), askNode);
+    }
+    setTimeout(() => this.walk(), 2);
+  }
+
+  sonar() {
+    const token = new Token();
+
     this.node.onPingQuery((query: Protocol.PingQuery) => {
       this.hashTable.addNodes([{
         id: query.getId(),
@@ -85,7 +110,12 @@ export default class Crawler {
       this.node.replyPing(query, this.node);
     });
 
-    this.node.onPingResponse(() => {
+    this.node.onPingResponse((response) => {
+      this.hashTable.addNodes([{
+        id: response.getId(),
+        ip: response.getFromIp(),
+        port: response.getFromPort(),
+      }]);
     });
 
     this.node.onFindNodeQuery((query: Protocol.FindNodeQuery) => {
@@ -94,7 +124,11 @@ export default class Crawler {
         ip: query.getFromIp(),
         port: query.getFromPort(),
       }]);
-      this.node.replyFindNode(query, this.hashTable.getNearestNodes(query.getTargetNodeId()));
+      this.node.replyFindNode(
+        query,
+        // Not same
+        this.hashTable.getNearestNodes(query.getTargetNodeId()),
+      );
     });
 
     this.node.onFindNodeResponse((response: Protocol.FindNodeResponse) => {
@@ -102,7 +136,7 @@ export default class Crawler {
       this.hashTable.addNodes(nodes);
       for (const foundNode of nodes) {
         this.node.findNode(this.node.id, foundNode);
-        this.node.getPeers(infoHash, foundNode);
+        // this.node.getPeers(infoHash, foundNode);
       }
     });
 
@@ -118,19 +152,18 @@ export default class Crawler {
       this.node.replyGetPeers(query, token.token, this.hashTable.getNearestNodes(query.getId()));
     });
 
-    this.node.onGetPeersResponse((response: Protocol.GetPeersResponse) => {
-      if (response.foundPeers()) {
-        const peers = response.getPeers();
-        this.hashTable.addPeers(peers);
-      } else {
-        const nodes = response.getNodes();
-        this.hashTable.addNodes(nodes);
-        for (const foundNode of nodes) {
-          this.node.findNode(this.node.id, foundNode);
-          this.node.getPeers(infoHash, foundNode);
-        }
-      }
-    });
+    // this.node.onGetPeersResponse((response: Protocol.GetPeersResponse) => {
+    //   if (response.foundPeers()) {
+    //     const peers = response.getPeers();
+    //     this.hashTable.addPeers(peers);
+    //   } else {
+    //     const nodes = response.getNodes();
+    //     this.hashTable.addNodes(nodes);
+    //     for (const foundNode of nodes) {
+    //       this.node.findNode(this.node.id, foundNode);
+    //     }
+    //   }
+    // });
 
     this.node.onAnnouncePeerQuery((query: Protocol.AnnouncePeerQuery) => {
       this.hashTable.addPeers([{
@@ -147,11 +180,10 @@ export default class Crawler {
     });
 
     this.listen(() => {
-      for (const bootNode of this.bootstrapNodes) {
-        this.node.findNode(this.node.id, bootNode);
-        this.node.getPeers(infoHash, bootNode);
-      }
+      this.join();
     });
+
+    setInterval(() => this.join(), 3000);
   }
 
   onReceivedInfoHash(callback: (infoHash: string) => void) {

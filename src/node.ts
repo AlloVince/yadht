@@ -298,6 +298,13 @@ export default class Node {
     return this.decId.xor(node.decId).toString(base);
   }
 
+  getRelayNodeId(targetNodeId: string): string {
+    return Buffer.concat([
+      Buffer.from(targetNodeId).slice(0, 6),
+      Buffer.from(this.id).slice(6),
+    ]).toString('hex');
+  }
+
   toString(): string {
     return format('%s:%s_%s', this.ip, this.port, this.id);
   }

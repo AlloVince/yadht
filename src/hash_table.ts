@@ -23,6 +23,10 @@ export class HashTable {
     this.logger.debug('Added nodes ', nodes);
   }
 
+  shiftNode(): NodeInterface {
+    return this.nodes.shift();
+  }
+
   getNearestNodes(targetNodeId: string): NodeInterface[] {
     let nodes: NodeInterface[] = [];
     if (this.nodes.length >= 8) {
