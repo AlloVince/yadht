@@ -50,6 +50,7 @@ export const NODE_EVENTS = {
   REPLIED_ANNOUNCE_PEER_QUERY: 'repliedAnnouncePeerQuery',
   RECEIVED_ANNOUNCE_PEER_QUERY: 'receivedAnnouncePeerQuery',
   RECEIVED_ANNOUNCE_PEER_RESPONSE: 'receivedAnnouncePeerResponse',
+  RECEIVED_INFO_HASH: 'receivedInfoHash',
 };
 
 export default class Node {
@@ -96,12 +97,7 @@ export default class Node {
   sendMessage(message: KRPCMessageInterface, targetIp: string, targetPort: number) {
     const msg = message.toBuffer();
     this.udp.send(msg, 0, msg.length, targetPort, targetIp);
-    this.getEmitter().emit(NODE_EVENTS.SENT_MESSAGE, message);
-    // fs.writeFileSync(
-    //   `${__dirname}/../logs/magnet.log`,
-    //   `sent,${targetIp},${targetPort},${msg.toString('base64')}\n`,
-    //   { flag: 'a' },
-    // );
+    this.getEmitter().emit(NODE_EVENTS.SENT_MESSAGE, { message, targetIp, targetPort });
     this.logger.debug(
       '[NODE:%s] sent message to [NODE:%s:%s] %j',
       this.toString(), targetIp, targetPort, message.toJSON());
@@ -109,11 +105,8 @@ export default class Node {
 
   receiveMessage(rawBuffer: Buffer, messageFrom: AddressInterface): KRPCMessageInterface {
     const emitter = this.getEmitter();
-    // fs.writeFileSync(
-    //   `${__dirname}/../logs/magnet.log`,
-    //   `received,${messageFrom.address},${messageFrom.port},${rawBuffer.toString('base64')}\n`,
-    //   { flag: 'a' },
-    // );
+    emitter.emit(NODE_EVENTS.RECEIVED_MESSAGE, { messageFrom, message: rawBuffer });
+
     const message = MessageBuilder.build(rawBuffer, messageFrom);
     this.logger.debug(
       '[NODE:%s] received message %s',
@@ -121,7 +114,6 @@ export default class Node {
       rawBuffer.toString('base64'),
       inspect(message, { depth: null, colors: true }),
     );
-    emitter.emit(NODE_EVENTS.RECEIVED_MESSAGE, message);
     if (message instanceof PingQuery) {
       emitter.emit(NODE_EVENTS.RECEIVED_PING_QUERY, message);
     } else if (message instanceof PingResponse) {
@@ -275,8 +267,31 @@ export default class Node {
     this.getEmitter().on(NODE_EVENTS.RECEIVED_GET_PEERS_RESPONSE, callback);
   }
 
+  replyAnnouncePeerQuery(
+    query: AnnouncePeerQuery,
+  ): AnnouncePeerResponse {
+    const response = new AnnouncePeerResponse(
+      {
+        query,
+        transactionId: query.getTransactionId(),
+        response: {
+          id: this.id,
+        },
+        fromIp: this.ip,
+        fromPort: this.port,
+      },
+    );
+    this.sendMessage(response, query.getFromIp(), query.getFromPort());
+    this.getEmitter().emit(NODE_EVENTS.REPLIED_GET_PEERS_QUERY, response);
+    return response;
+  }
+
   onAnnouncePeerQuery(callback: (query: AnnouncePeerQuery) => void) {
     this.getEmitter().on(NODE_EVENTS.RECEIVED_ANNOUNCE_PEER_QUERY, callback);
+  }
+
+  onAnnouncePeerResponse(callback: (query: AnnouncePeerQuery) => void) {
+    this.getEmitter().on(NODE_EVENTS.RECEIVED_ANNOUNCE_PEER_RESPONSE, callback);
   }
 
   distanceTo(node: Node, base: number = 10): string {

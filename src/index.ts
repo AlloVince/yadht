@@ -1,5 +1,5 @@
 import dgram from 'dgram';
-import Node from './node';
+import Node, { NODE_EVENTS } from './node';
 import { HashTable } from './hash_table';
 import * as Protocol from './protocol';
 
@@ -58,7 +58,7 @@ export default class Crawler {
       this.server,
     );
 
-    this.hashTable = new HashTable();
+    this.hashTable = new HashTable(this.logger);
   }
 
   setBootstrapNodes(nodes: Node[]) {
@@ -85,6 +85,9 @@ export default class Crawler {
       this.node.replyPing(query, this.node);
     });
 
+    this.node.onPingResponse(() => {
+    });
+
     this.node.onFindNodeQuery((query: Protocol.FindNodeQuery) => {
       this.hashTable.addNodes([{
         id: query.getId(),
@@ -109,6 +112,9 @@ export default class Crawler {
         ip: query.getFromIp(),
         port: query.getFromPort(),
       }]);
+      if (query.getInfoHash()) {
+        this.node.getEmitter().emit(NODE_EVENTS.RECEIVED_INFO_HASH, query.getInfoHash());
+      }
       this.node.replyGetPeers(query, token.token, this.hashTable.getNearestNodes(query.getId()));
     });
 
@@ -126,12 +132,30 @@ export default class Crawler {
       }
     });
 
+    this.node.onAnnouncePeerQuery((query: Protocol.AnnouncePeerQuery) => {
+      this.hashTable.addPeers([{
+        ip: query.getFromIp(),
+        port: query.getPeerPort(),
+      }]);
+      if (query.getInfoHash()) {
+        this.node.getEmitter().emit(NODE_EVENTS.RECEIVED_INFO_HASH, query.getInfoHash());
+      }
+      this.node.replyAnnouncePeerQuery(query);
+    });
+
+    this.node.onAnnouncePeerResponse(() => {
+    });
+
     this.listen(() => {
       for (const bootNode of this.bootstrapNodes) {
         this.node.findNode(this.node.id, bootNode);
         this.node.getPeers(infoHash, bootNode);
       }
     });
+  }
+
+  onReceivedInfoHash(callback: (infoHash: string) => void) {
+    this.node.getEmitter().addListener(NODE_EVENTS.RECEIVED_INFO_HASH, callback);
   }
 
   listen(callback: Callback, port?: number) {

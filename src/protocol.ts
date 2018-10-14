@@ -493,6 +493,10 @@ export class GetPeersQuery extends QueryMessage {
     });
   }
 
+  getInfoHash(): string {
+    return this[KEY_ARGUMENTS].info_hash;
+  }
+
   getEncodedArguments() {
     return {
       id: Buffer.from(this[KEY_ARGUMENTS].id, 'hex'),
@@ -614,6 +618,14 @@ export class AnnouncePeerQuery extends QueryMessage {
       fromPort,
       queryType: QUERY_TYPES.ANNOUNCE_PEER,
     });
+  }
+
+  getPeerPort(): number {
+    return this[KEY_ARGUMENTS].port;
+  }
+
+  getInfoHash(): string {
+    return this[KEY_ARGUMENTS].info_hash;
   }
 
   getEncodedArguments() {

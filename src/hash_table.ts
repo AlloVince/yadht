@@ -1,21 +1,26 @@
 import { NodeInterface, PeerInterface } from './protocol';
 
 export class HashTable {
+  logger: Console;
   nodes: NodeInterface[] = [];
   peers: PeerInterface[] = [];
+
+  constructor(logger: Console = console) {
+    this.logger = logger;
+  }
 
   addPeers(peers: PeerInterface[]) {
     for (const peer of peers) {
       this.peers.push(peer);
     }
-    console.debug('Added peers ', peers);
+    this.logger.debug('Added peers ', peers);
   }
 
   addNodes(nodes: NodeInterface[]) {
     for (const node of nodes) {
       this.nodes.push(node);
     }
-    console.debug('Added nodes ', nodes);
+    this.logger.debug('Added nodes ', nodes);
   }
 
   getNearestNodes(targetNodeId: string): NodeInterface[] {
@@ -26,7 +31,7 @@ export class HashTable {
     if (this.nodes.length > 0) {
       nodes = Array.of(8).map(() => this.nodes[0]);
     }
-    console.debug('Return near nodes', this.nodes.slice(0, 8));
+    this.logger.debug('Return near nodes', this.nodes.slice(0, 8));
     return nodes;
   }
 }

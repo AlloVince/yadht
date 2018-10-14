@@ -27,16 +27,15 @@ rl.on('line', (line: string) => {
       port: Number.parseInt(port, 10),
     });
     // console.log('%s %s ', i, method, inspect(message, { depth: null, colors: true }));
-    // console.log('%s %s %s %j', i, method, message.constructor.name, message);
-    if (message instanceof GetPeersResponse && message.foundPeers()) {
-      const peers = message.getPeers();
-      for (const peer of peers) {
-        console.log('\'%s:%s\',', peer.ip, peer.port);
-      }
-      // console.log('%s %s %s %j', i, method, message.constructor.name, message);
-    }
+    console.log('%s %s %s %j', i, method, message.constructor.name, message);
+    // if (message instanceof GetPeersResponse && message.foundPeers()) {
+    //   const peers = message.getPeers();
+    //   for (const peer of peers) {
+    //     console.log('\'%s:%s\',', peer.ip, peer.port);
+    //   }
+    // }
   } catch (e) {
-    // console.error(i, e);
+    console.error(i, e);
   }
 
   return true;
