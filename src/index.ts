@@ -1,11 +1,11 @@
 import dgram from 'dgram';
 import Node from './node';
 import { HashTable } from './hash_table';
-import {
-  AddressInterface, FindNodeQuery, FindNodeResponse, GetPeersQuery, GetPeersResponse, PingQuery,
-} from './protocol';
+import * as Protocol from './protocol';
 
 declare type Callback = () => void;
+
+export { Node, HashTable, Token, Protocol };
 
 class Token {
   token: string;
@@ -37,17 +37,18 @@ export default class Crawler {
   hashTable: HashTable;
 
   constructor(
-    { ip, port, logger }: {
+    { ip, port, logger, node }: {
       ip?: string,
       port?: number,
       logger?: Console,
+      node?: Node,
     }) {
     this.server = dgram.createSocket('udp4');
     this.logger = logger || console;
     this.ip = ip || '127.0.0.1';
     this.port = port || 6881;
 
-    this.node = new Node(
+    this.node = node || new Node(
       {
         id: Node.generateId().toString('hex'),
         ip: this.ip,
@@ -68,14 +69,14 @@ export default class Crawler {
     return this.bootstrapNodes;
   }
 
-  findPeer(infoHash: string) {
-
+  getNode(): Node {
+    return this.node;
   }
 
   start(inputHash: string) {
     const token = new Token();
     const infoHash = process.env.INFO_HASH || inputHash.toLowerCase();
-    this.node.onPingQuery((query: PingQuery) => {
+    this.node.onPingQuery((query: Protocol.PingQuery) => {
       this.hashTable.addNodes([{
         id: query.getId(),
         ip: query.getFromIp(),
@@ -84,7 +85,7 @@ export default class Crawler {
       this.node.replyPing(query, this.node);
     });
 
-    this.node.onFindNodeQuery((query: FindNodeQuery) => {
+    this.node.onFindNodeQuery((query: Protocol.FindNodeQuery) => {
       this.hashTable.addNodes([{
         id: query.getId(),
         ip: query.getFromIp(),
@@ -93,7 +94,7 @@ export default class Crawler {
       this.node.replyFindNode(query, this.hashTable.getNearestNodes(query.getTargetNodeId()));
     });
 
-    this.node.onFindNodeResponse((response: FindNodeResponse) => {
+    this.node.onFindNodeResponse((response: Protocol.FindNodeResponse) => {
       const nodes = response.getNodes();
       this.hashTable.addNodes(nodes);
       for (const foundNode of nodes) {
@@ -102,7 +103,7 @@ export default class Crawler {
       }
     });
 
-    this.node.onGetPeersQuery((query: GetPeersQuery) => {
+    this.node.onGetPeersQuery((query: Protocol.GetPeersQuery) => {
       this.hashTable.addNodes([{
         id: query.getId(),
         ip: query.getFromIp(),
@@ -111,7 +112,7 @@ export default class Crawler {
       this.node.replyGetPeers(query, token.token, this.hashTable.getNearestNodes(query.getId()));
     });
 
-    this.node.onGetPeersResponse((response: GetPeersResponse) => {
+    this.node.onGetPeersResponse((response: Protocol.GetPeersResponse) => {
       if (response.foundPeers()) {
         const peers = response.getPeers();
         this.hashTable.addPeers(peers);
@@ -145,7 +146,7 @@ export default class Crawler {
       this.logger.error('[NODE:%s] UDP socket err: ', this.node, err);
     });
 
-    this.server.on('message', (rawMessage: Buffer, address: AddressInterface) => {
+    this.server.on('message', (rawMessage: Buffer, address: Protocol.AddressInterface) => {
       try {
         this.node.receiveMessage(rawMessage, address);
       } catch (e) {
