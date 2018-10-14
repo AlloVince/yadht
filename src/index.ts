@@ -73,6 +73,10 @@ export default class DHTNode {
     return this.node;
   }
 
+  getHashTable(): HashTable {
+    return this.hashTable;
+  }
+
   torrentDiscovery(inputHash: string) {
     const infoHash = process.env.INFO_HASH || inputHash.toLowerCase();
 
@@ -134,10 +138,10 @@ export default class DHTNode {
     this.node.onFindNodeResponse((response: Protocol.FindNodeResponse) => {
       const nodes = response.getNodes();
       this.hashTable.addNodes(nodes);
-      for (const foundNode of nodes) {
-        this.node.findNode(this.node.id, foundNode);
-        // this.node.getPeers(infoHash, foundNode);
-      }
+      // for (const foundNode of nodes) {
+      //   this.node.findNode(this.node.id, foundNode);
+      //   this.node.getPeers(infoHash, foundNode);
+      // }
     });
 
     this.node.onGetPeersQuery((query: Protocol.GetPeersQuery) => {
@@ -152,18 +156,18 @@ export default class DHTNode {
       this.node.replyGetPeers(query, token.token, this.hashTable.getNearestNodes(query.getId()));
     });
 
-    // this.node.onGetPeersResponse((response: Protocol.GetPeersResponse) => {
-    //   if (response.foundPeers()) {
-    //     const peers = response.getPeers();
-    //     this.hashTable.addPeers(peers);
-    //   } else {
-    //     const nodes = response.getNodes();
-    //     this.hashTable.addNodes(nodes);
-    //     for (const foundNode of nodes) {
-    //       this.node.findNode(this.node.id, foundNode);
-    //     }
-    //   }
-    // });
+    this.node.onGetPeersResponse((response: Protocol.GetPeersResponse) => {
+      if (response.foundPeers()) {
+        const peers = response.getPeers();
+        this.hashTable.addPeers(peers);
+      } else {
+        const nodes = response.getNodes();
+        this.hashTable.addNodes(nodes);
+        // for (const foundNode of nodes) {
+        //   this.node.findNode(this.node.id, foundNode);
+        // }
+      }
+    });
 
     this.node.onAnnouncePeerQuery((query: Protocol.AnnouncePeerQuery) => {
       this.hashTable.addPeers([{
@@ -206,7 +210,7 @@ export default class DHTNode {
       try {
         this.node.receiveMessage(rawMessage, address);
       } catch (e) {
-        this.logger.error(e);
+        this.logger.warn(e.message);
       }
     });
   }

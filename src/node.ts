@@ -300,8 +300,8 @@ export default class Node {
 
   getRelayNodeId(targetNodeId: string): string {
     return Buffer.concat([
-      Buffer.from(targetNodeId).slice(0, 6),
-      Buffer.from(this.id).slice(6),
+      Buffer.from(targetNodeId, 'hex').slice(0, 6),
+      Buffer.from(this.id, 'hex').slice(6),
     ]).toString('hex');
   }
 

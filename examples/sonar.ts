@@ -7,6 +7,7 @@ const dht = new DHTNode({
     debug: () => {
     },
     info: console.info,
+    warn: console.warn,
     error: console.error,
   }) as Console,
 });
@@ -24,7 +25,7 @@ dht.setBootstrapNodes([
 ]);
 
 dht.onReceivedInfoHash((infoHash: string) => {
-  console.info(infoHash);
+  console.info('magnet:?xt=urn:btih:%s', infoHash.toUpperCase());
 });
 
 dht.getNode().getEmitter().on(NODE_EVENTS.SENT_MESSAGE, ({ message, targetIp, targetPort }) => {
@@ -44,3 +45,11 @@ dht.getNode().getEmitter().on(NODE_EVENTS.RECEIVED_MESSAGE, ({ message, messageF
 });
 
 dht.sonar();
+
+setInterval(
+  () => {
+    const hashTable = dht.getHashTable();
+    console.info('Hash table stats: %j', hashTable.getStats());
+  },
+  5000,
+);
