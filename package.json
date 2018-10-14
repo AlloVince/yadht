@@ -1,0 +1,81 @@
+{
+  "name": "yadht",
+  "version": "0.0.0-development",
+  "description": "Yet another BitTorrent DHT (BEP 5) implementation by TypeScript",
+  "main": "index.js",
+  "scripts": {
+    "ava": "LOG_LEVEL=error NODE_ENV=test ava --verbose --serial",
+    "test": "nyc -a --reporter=lcov --reporter=text --reporter=html npm run ava",
+    "lint": "tslint src/**/*.ts --exclude '**/*.d.ts' --project tsconfig.json",
+    "build": "rm -rf lib && tsc -m \"System\" --outFile \"lib/index\" --sourceMap \"false\" && rm lib/index && mv lib/index.d.ts ./ && tsc",
+    "semantic-release": "semantic-release",
+    "travis-deploy-once": "travis-deploy-once"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "keywords": [],
+  "license": "BSD-3-Clause",
+  "author": "",
+  "homepage": "",
+  "engines": {
+    "node": ">=10"
+  },
+  "ava": {
+    "files": [
+      "test/**/*.ts"
+    ],
+    "sources": [
+      "src/**/*.ts"
+    ],
+    "failFast": false,
+    "tap": false,
+    "require": [
+      "ts-node/register"
+    ],
+    "extensions": [
+      "ts"
+    ],
+    "babel": false
+  },
+  "nyc": {
+    "extension": [
+      ".ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "include": [
+      "src/**/*.ts"
+    ],
+    "exclude": [
+      "lib/**/*"
+    ],
+    "sourceMap": true
+  },
+  "pre-commit": [
+    "lint"
+  ],
+  "dependencies": {
+    "bencode": "^2.0.0",
+    "bignum": "^0.13.0",
+    "eventemitter2": "^5.0.1"
+  },
+  "peerDependencies": {},
+  "devDependencies": {
+    "@types/bencode": "^2.0.0",
+    "@types/bignum": "0.0.29",
+    "@types/ip": "0.0.31",
+    "@types/node": "^10.11.3",
+    "ava": "^1.0.0-beta.8",
+    "nyc": "^13.0.1",
+    "pre-commit": "^1.2.2",
+    "semantic-release": "^15.9.16",
+    "travis-deploy-once": "^5.0.9",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.11.0",
+    "tslint-config-airbnb": "^5.11.0",
+    "typescript": "^3.1.1"
+  }
+}
