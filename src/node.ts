@@ -18,7 +18,7 @@ import {
   AddressInterface,
   PeerInterface,
 } from './protocol';
-import fs from 'fs';
+// import fs from 'fs';
 
 // const convert = {
 //   bin2dec : s => parseInt(s, 2).toString(10),
@@ -68,13 +68,21 @@ export default class Node {
       .digest();
   }
 
-  constructor(input: NodeInterface, udp?: dgram.Socket) {
+  constructor(
+    input: {
+      id: string,
+      ip: string,
+      port: number,
+      logger?: Console,
+    },
+    udp?: dgram.Socket,
+  ) {
     this.id = input.id;
     this.port = input.port;
     this.ip = input.ip;
+    this.logger = input.logger || console;
     this.decId = new Bignum(this.id, 16);
     this.udp = udp;
-    this.logger = console;
   }
 
   getEmitter(): EventEmitter2 {
@@ -89,25 +97,25 @@ export default class Node {
     const msg = message.toBuffer();
     this.udp.send(msg, 0, msg.length, targetPort, targetIp);
     this.getEmitter().emit(NODE_EVENTS.SENT_MESSAGE, message);
-    fs.writeFileSync(
-      `${__dirname}/../logs/magnet.log`,
-      `sent,${targetIp},${targetPort},${msg.toString('base64')}\n`,
-      { flag: 'a' },
-    );
-    console.debug(
+    // fs.writeFileSync(
+    //   `${__dirname}/../logs/magnet.log`,
+    //   `sent,${targetIp},${targetPort},${msg.toString('base64')}\n`,
+    //   { flag: 'a' },
+    // );
+    this.logger.debug(
       '[NODE:%s] sent message to [NODE:%s:%s] %j',
       this.toString(), targetIp, targetPort, message.toJSON());
   }
 
   receiveMessage(rawBuffer: Buffer, messageFrom: AddressInterface): KRPCMessageInterface {
     const emitter = this.getEmitter();
-    fs.writeFileSync(
-      `${__dirname}/../logs/magnet.log`,
-      `received,${messageFrom.address},${messageFrom.port},${rawBuffer.toString('base64')}\n`,
-      { flag: 'a' },
-    );
+    // fs.writeFileSync(
+    //   `${__dirname}/../logs/magnet.log`,
+    //   `received,${messageFrom.address},${messageFrom.port},${rawBuffer.toString('base64')}\n`,
+    //   { flag: 'a' },
+    // );
     const message = MessageBuilder.build(rawBuffer, messageFrom);
-    console.debug(
+    this.logger.debug(
       '[NODE:%s] received message %s',
       this.toString(),
       rawBuffer.toString('base64'),

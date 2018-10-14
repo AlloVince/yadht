@@ -52,6 +52,7 @@ export default class Crawler {
         id: Node.generateId().toString('hex'),
         ip: this.ip,
         port: this.port,
+        logger: this.logger,
       },
       this.server,
     );
