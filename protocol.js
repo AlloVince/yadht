@@ -1,1 +1,1 @@
-exports = module.exports = require('./lib/node');
+exports = module.exports = require('./lib/protocol');
