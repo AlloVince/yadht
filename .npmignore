@@ -1,6 +1,8 @@
-.travis.yml
+*
 !lib/**/*
 !index.js
+!node.js
+!protocol.js
 !index.d.ts
 !package.json
 !README.md
